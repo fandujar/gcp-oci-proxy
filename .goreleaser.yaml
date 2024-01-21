@@ -1,0 +1,24 @@
+before:
+  hooks:
+    - go mod download
+builds:
+- env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  - darwin
+  goarch:
+  - amd64
+archives:
+- format: binary
+dockers:
+- dockerfile: Dockerfile
+  binaries:
+  - gcp-oci-proxy
+  build_flag_templates:
+  - "--label=org.label-schema.schema-version=1.0"
+  - "--label=org.label-schema.version={{.Version}}"
+  - "--label=org.label-schema.name={{.ProjectName}}"
+  image_templates:
+  - "totvs-ai/gcp-oci-proxy:latest"
+  - "totvs-ai/gcp-oci-proxy:{{ .Tag }}"
