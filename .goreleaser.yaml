@@ -13,8 +13,6 @@ archives:
 - format: binary
 dockers:
 - dockerfile: Dockerfile
-  binaries:
-  - gcp-oci-proxy
   build_flag_templates:
   - "--label=org.label-schema.schema-version=1.0"
   - "--label=org.label-schema.version={{.Version}}"
