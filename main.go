@@ -236,7 +236,8 @@ func main() {
 				fmt.Fprintf(w, "    name: %s\n", asset.Name)
 				fmt.Fprintf(w, "    type: application\n")
 				fmt.Fprintf(w, "    urls:\n")
-				fmt.Fprintf(w, "      - %s\n", asset.URI)
+				fmt.Fprintf(w, "    - http://gcp-oci-proxy.gcp-oci-proxy.svc.cluster.local/%s:%s\n", asset.Name, *asset.Tags[0])
+				// fmt.Fprintf(w, "      - %s\n", asset.URI)
 				fmt.Fprintf(w, "    version: %s\n", *asset.Tags[0])
 			}
 		}
