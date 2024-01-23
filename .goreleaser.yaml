@@ -18,5 +18,5 @@ dockers:
   - "--label=org.label-schema.version={{.Version}}"
   - "--label=org.label-schema.name={{.ProjectName}}"
   image_templates:
-  - "totvs-ai/gcp-oci-proxy:latest"
-  - "totvs-ai/gcp-oci-proxy:{{ .Tag }}"
+  - "us-central1-docker.pkg.dev/totvs-ai-control-plane/totvs-ai-images/gcp-oci-proxy:latest"
+  - "us-central1-docker.pkg.dev/totvs-ai-control-plane/totvs-ai-images/gcp-oci-proxy:{{ .Tag }}"
