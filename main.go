@@ -221,6 +221,27 @@ func main() {
 	}
 
 	router := defaultRouter(nil)
+
+	router.Get("/index.yaml", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "apiVersion: v2")
+		fmt.Fprintln(w, "entries:")
+		for _, asset := range RepositoryDB.Assets {
+			if len(asset.Tags) > 0 {
+				fmt.Fprintf(w, "  %s:\n", asset.Name)
+				fmt.Fprintf(w, "  - created: %s\n", time.Now().Format(time.RFC3339))
+				fmt.Fprintf(w, "    description: A Helm chart for Kubernetes\n")
+				fmt.Fprintf(w, "    digest: %s\n", strings.Split(asset.SHA, ":")[1])
+				fmt.Fprintf(w, "    name: %s\n", asset.Name)
+				fmt.Fprintf(w, "    type: application\n")
+				fmt.Fprintf(w, "    urls:\n")
+				fmt.Fprintf(w, "      - %s\n", asset.URI)
+				fmt.Fprintf(w, "    version: %s\n", *asset.Tags[0])
+			}
+		}
+	})
+
 	router.Get("/{assetName}@{assetSHA}", func(w http.ResponseWriter, r *http.Request) {
 		var assetName = chi.URLParam(r, "assetName")
 		var assetSHA = chi.URLParam(r, "assetSHA")
