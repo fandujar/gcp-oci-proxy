@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -152,6 +153,7 @@ func initDB(ctx context.Context, config *Config, client *artifactregistry.Client
 		}
 
 		for _, tag := range resp.Tags {
+			tag := tag
 			asset.Tags = append(asset.Tags, &tag)
 		}
 
@@ -178,6 +180,44 @@ func extractNameAndSha(input string) (name, sha string, err error) {
 	sha = nameParts[1]
 
 	return name, sha, nil
+}
+
+// writeIndex renders a Helm repository index. All versions of a chart must be
+// grouped under a single entries key: emitting one key per tagged digest
+// produces duplicate map keys, which Helm rejects as invalid YAML.
+func writeIndex(w io.Writer, assets []*Asset) {
+	fmt.Fprintln(w, "apiVersion: v2")
+	fmt.Fprintln(w, "entries:")
+
+	byName := map[string][]*Asset{}
+	names := []string{}
+	for _, asset := range assets {
+		if len(asset.Tags) == 0 {
+			continue
+		}
+		if _, seen := byName[asset.Name]; !seen {
+			names = append(names, asset.Name)
+		}
+		byName[asset.Name] = append(byName[asset.Name], asset)
+	}
+	sort.Strings(names)
+
+	created := time.Now().Format(time.RFC3339)
+	for _, name := range names {
+		fmt.Fprintf(w, "  %s:\n", name)
+		for _, asset := range byName[name] {
+			for _, tag := range asset.Tags {
+				fmt.Fprintf(w, "  - created: %s\n", created)
+				fmt.Fprintf(w, "    description: A Helm chart for Kubernetes\n")
+				fmt.Fprintf(w, "    digest: %s\n", strings.Split(asset.SHA, ":")[1])
+				fmt.Fprintf(w, "    name: %s\n", name)
+				fmt.Fprintf(w, "    type: application\n")
+				fmt.Fprintf(w, "    urls:\n")
+				fmt.Fprintf(w, "    - http://gcp-oci-proxy.gcp-oci-proxy.svc.cluster.local/%s:%s\n", name, *tag)
+				fmt.Fprintf(w, "    version: %s\n", *tag)
+			}
+		}
+	}
 }
 
 func getCredential(config *Config) (string, string, error) {
@@ -225,22 +265,7 @@ func main() {
 	router.Get("/index.yaml", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "apiVersion: v2")
-		fmt.Fprintln(w, "entries:")
-		for _, asset := range RepositoryDB.Assets {
-			if len(asset.Tags) > 0 {
-				fmt.Fprintf(w, "  %s:\n", asset.Name)
-				fmt.Fprintf(w, "  - created: %s\n", time.Now().Format(time.RFC3339))
-				fmt.Fprintf(w, "    description: A Helm chart for Kubernetes\n")
-				fmt.Fprintf(w, "    digest: %s\n", strings.Split(asset.SHA, ":")[1])
-				fmt.Fprintf(w, "    name: %s\n", asset.Name)
-				fmt.Fprintf(w, "    type: application\n")
-				fmt.Fprintf(w, "    urls:\n")
-				fmt.Fprintf(w, "    - http://gcp-oci-proxy.gcp-oci-proxy.svc.cluster.local/%s:%s\n", asset.Name, *asset.Tags[0])
-				// fmt.Fprintf(w, "      - %s\n", asset.URI)
-				fmt.Fprintf(w, "    version: %s\n", *asset.Tags[0])
-			}
-		}
+		writeIndex(w, RepositoryDB.Assets)
 	})
 
 	router.Get("/{assetName}@{assetSHA}", func(w http.ResponseWriter, r *http.Request) {

@@ -1,11 +1,15 @@
 module totvs.ai/gcp-oci-proxy
 
-go 1.20
+go 1.21
+
+toolchain go1.24.4
 
 require (
 	cloud.google.com/go/artifactregistry v1.14.6
 	github.com/go-chi/chi v1.5.5
 	google.golang.org/api v0.157.0
+	helm.sh/helm/v3 v3.14.0
+	sigs.k8s.io/yaml v1.3.0
 )
 
 require (
@@ -72,8 +76,6 @@ require (
 	google.golang.org/grpc v1.60.1 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	helm.sh/helm/v3 v3.14.0 // indirect
 	k8s.io/client-go v0.29.0 // indirect
 	oras.land/oras-go v1.2.4 // indirect
-	sigs.k8s.io/yaml v1.3.0 // indirect
 )
